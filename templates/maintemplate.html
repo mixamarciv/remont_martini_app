@@ -12,52 +12,42 @@
   </head>
 <body>
 
-<nav class="navbar navbar-default navbar-static-top" role="navigation" >
-      <div class="container">
-        <div class="navbar-header">
-	      <button type="button"
-		      class="navbar-toggle"
-		      data-toggle="collapse"
-		      data-target=".navbar-collapse"
-		      >
-		<span class="icon-bar"></span>
-		<span class="icon-bar"></span>
-		<span class="icon-bar"></span>
-	      </button>
-	      <a class="navbar-brand" href="https://vrashke.ru">
-			<ff1><big><i>В</i><big><small><small> </small></small>Рашке.ru</big></big></ff1> &nbsp;&nbsp; &nbsp;
-	      </a>
-        </div>
-	
-	
-        <div id="navbar" class="navbar-collapse collapse">
-	  
-	  <ul class="nav navbar-nav">
-              <li><a href="#remont_noutbuka"><ff1>ремонт ПК и Ноутбуков</ff1></a></li>
-              <li><a href="#zapravka_cartridja"><ff1>заправка Картриджей</ff1></a></li>
-              <li><a href="#ustanovka_oc"><ff1>переустановка системы</ff1></a></li>
-              <!-- <li><a href="/main#zvonite">контакты</a></li> -->
-          </ul>
-          
-	  <ul class="nav navbar-nav navbar-right">
-	      <li>
-                <div class="col-md-8">
-                <a 	href="/{{if .s.dark}}white{{else}}dark{{end}}" class="btn" 
-					id="change_template" data-toggle="tooltip" data-placement="bottom"
-					title="переключить {{if .s.dark}}к яркой версии сайта{{else}}к темной версии сайта для усталых и красных глазок ){{end}}">
-                  <img  src="/img/template_image_{{if .s.dark}}white{{else}}dark{{end}}.png" class="pull-right" 
-						alt="переключить {{if .s.dark}}к яркой версии сайта{{else}}к темной версии сайта для усталых и красных глазок ){{end}}"
-						style="width:30px;"
-						>
-                </a>
-                </div>
-              </li>
-	  </ul>
-          
-        </div><!--/.nav-collapse -->
-	
-	
-      </div>
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="true">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">
+			<ff1><big><i>В</i><big><small><small> </small></small>Рашке.ru</big></big></ff1> &nbsp;&nbsp; &nbsp;	
+	  </a>
+    </div>
+
+    <div class="navbar-collapse collapse in" id="bs-example-navbar-collapse-1" aria-expanded="true">
+		  <ul class="nav navbar-nav">
+	              <li><a href="#remont_noutbuka"><ff1>ремонт ПК и Ноутбуков</ff1></a></li>
+	              <li><a href="#zapravka_cartridja"><ff1>заправка Картриджей</ff1></a></li>
+	              <li><a href="#ustanovka_oc"><ff1>переустановка системы</ff1></a></li>
+	      </ul>
+		  <ul class="nav navbar-nav navbar-right">
+		      <li>
+	                <div class="col-md-8">
+	                <a 	href="/{{if .s.dark}}white{{else}}dark{{end}}" class="btn" 
+						id="change_template" data-toggle="tooltip" data-placement="bottom"
+						title="переключить {{if .s.dark}}к яркой версии сайта{{else}}к темной версии сайта для усталых и красных глазок ){{end}}">
+	                  <img  src="/img/template_image_{{if .s.dark}}white{{else}}dark{{end}}.png" class="pull-right" 
+							alt="переключить {{if .s.dark}}к яркой версии сайта{{else}}к темной версии сайта для усталых и красных глазок ){{end}}"
+							style="width:30px;"
+							>
+	                </a>
+	                </div>
+	          </li>
+		  </ul>
+    </div>
+  </div>
 </nav>
 
 
