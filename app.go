@@ -17,6 +17,8 @@ import (
 
 func init() {
 	InitLog()
+	InitDb()
+	initSendMail()
 }
 
 func main() {
@@ -55,9 +57,13 @@ func main() {
 
 	m.Get("/", func(r render.Render, session sessions.Session) {
 		var js = map[string]interface{}{}
-		s := GetSessJson(session, "s", default_session_data)
-		js["s"] = s
-		//SetSessJson(session, "s", s)
+		js["s"] = GetSessJson(session, "s", default_session_data)
+		r.HTML(200, "main", js)
+	})
+
+	m.Get("/main", func(r render.Render, session sessions.Session) {
+		var js = map[string]interface{}{}
+		js["s"] = GetSessJson(session, "s", default_session_data)
 		r.HTML(200, "main", js)
 	})
 
@@ -76,6 +82,11 @@ func main() {
 		SetSessJson(session, "s", s)
 		r.Redirect("/")
 	})
+
+	m.Get("/messages", http_get_messages)
+	m.Post("/messages", http_post_messages)
+	m.Post("/messagenewsavesession", http_post_messagenewsavesession)
+	m.Post("/messagenew", http_post_messagenew)
 
 	m.RunOnAddr(run_on_addr)
 }

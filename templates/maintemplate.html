@@ -12,6 +12,25 @@
   </head>
 <body>
 
+<stdscripts>
+<script language='javascript' src='/js/jquery.min.js'></script>
+<script language='javascript' src='/js/bootstrap.min.js'></script>
+<script language='javascript' src='/js/scripts.js'></script>
+<script language='javascript'>
+$(document).ready(function(){
+	$('#change_template').tooltip({
+		container:'body',
+		dalay:{"show": 500, "hide":100},
+		template:'<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner" style="width:250px;font-size:150%;"></div></div>'
+	});
+	$('#change_template').tooltip('show')
+	setTimeout(function(){
+		$('#change_template').tooltip('hide')
+	},4000);
+})
+</script>
+</stdscripts>
+
 <nav class="navbar navbar-default">
   <div class="container-fluid">
     <div class="navbar-header">
@@ -22,15 +41,15 @@
         <span class="icon-bar"></span>
       </button>
       <a class="navbar-brand" href="/">
-			<ff1><big><i>В</i><big><small><small> </small></small>Рашке.ru</big></big></ff1> &nbsp;&nbsp; &nbsp;	
+			<big><ff1>РЕМОНТ<big><big>.</big></big></big></ff1><ff1><big><i>В</i><big><small><small> </small></small>Рашке.ru</big></big></ff1> &nbsp;&nbsp; &nbsp;	
 	  </a>
     </div>
 
     <div class="navbar-collapse collapse in" id="bs-example-navbar-collapse-1" aria-expanded="true">
 		  <ul class="nav navbar-nav">
-	              <li><a href="#remont_noutbuka"><ff1>ремонт ПК и Ноутбуков</ff1></a></li>
-	              <li><a href="#zapravka_cartridja"><ff1>заправка Картриджей</ff1></a></li>
-	              <li><a href="#ustanovka_oc"><ff1>переустановка системы</ff1></a></li>
+	              <li><a href="/main#sozdanie_sayta"><ff1>создание/хостинг/поддержка сайта</ff1></a></li>
+	              <li><a href="/main#remont_noutbuka"><ff1>ремонт ПК и Ноутбуков</ff1></a></li>
+	              <li><a href="/main#zapravka_cartridja"><ff1>заправка Картриджей</ff1></a></li>
 	      </ul>
 		  <ul class="nav navbar-nav navbar-right">
 		      <li>
@@ -71,7 +90,6 @@
   <small><small>
   <div class="col-md-10">
         <div class="col-md-6">
-
 	        <p class="text-muted">
 				<a class="mailto" href="mailto:mixamarciv@gmail.com">написать администратору<br>mixamarciv@gmail.com</a>
 			</p>
@@ -94,7 +112,7 @@
         </div>
   </div>
   <div class="col-md-2">
-      город Инта <br>
+      город <b><big>Инта</big></b> <br>
       <!-- server time: <%- @g.moment().format('YYYY.MM.DD HH:mm:ss'); %><br>
       <%- @get_execute_time() %>
 	  -->
@@ -102,25 +120,6 @@
   </small></small>
 </footer>
 
-
-<stdscripts>
-  <script language='javascript' src='/js/jquery.min.js'></script>
-  <script language='javascript' src='/js/bootstrap.min.js'></script>
-  <script language='javascript'>
-	$(document).ready(function(){
-		$('#change_template').tooltip({
-			container:'body',
-			dalay:{"show": 500, "hide":100},
-			template:'<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner" style="width:250px;font-size:150%;"></div></div>'
-		});
-		$('#change_template').tooltip('show')
-		setTimeout(function(){
-			$('#change_template').tooltip('hide')
-		},4000);
-	})
-  </script>
-
-</stdscripts>
 
 </body>
 </html>

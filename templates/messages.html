@@ -1,0 +1,126 @@
+
+<div class="container" id=messages>
+	{{if .error}}
+		<div class="alert alert-dismissible alert-danger">
+		  <h3><b>ОШИБКА:</b> {{.error}}</h3>
+		</div>
+	{{end}}
+</div>
+
+<div class="container" id=messages>
+	
+</div>
+
+<div class="row">
+	<div class="col-md-12 col-md-offset-0">
+			<!--
+			{{if .post}}
+				<div class="row">
+				  <div class="col-md-12">
+					<div class="panel panel-default">
+					  <div class="panel-heading">
+						сообщение от {{.post.postdatefmt}}, автор: <b> {{.post.userdata.name}} {{.post.userdata.pat}} {{.post.userdata.fam}}</b>  
+						<br>
+					  </div>
+					  <div class="panel-body">
+						  <div class="col-md-12" style="white-space: pre-wrap;">{{printf "%s" .post.text}}</div>
+						  {{if .post.images}}
+							<div class="col-md-12">
+								{{range .post.images}}
+									<a href="{{.path}}" title="{{.title}}" data-gallery>
+									<img src="{{.pathmin}}" style="margin:4px;padding:4px;"/>
+									</a>
+								{{end}}
+							</div>
+						  {{end}}
+					  </div>
+					</div>
+				  </div>
+				</div>
+			{{else}}
+				<div class="alert alert-dismissible alert-info">
+				  <strong>Сообщение не найдено.</strong> Возможно его никогда не было или оно не прошло модерацию и его удалили.
+				</div>
+			{{end}}
+			-->
+	</div>
+</div>
+
+<div class="container" id=comments>
+
+</div>
+
+<script  type="text/javascript">
+function load_all_messages(){
+	progress_loading('#messages',show=1,text='загрузка сообщений',size=40);
+	setTimeout(function(){
+		var d = {}
+		d['type'] = 'loadmessages';
+		d['uuid_post'] = '{{.post.uuid}}';
+		var jsondatastr = JSON.stringify(d);
+		
+		$.ajax({
+		    type: 'POST',
+		    url: '/messages',
+		    data: jsondatastr
+		}).always(function() {
+			progress_loading('#messages',show=0);
+		}).done(function(d) {
+			dtext = d
+			d = JSON.parse(d);
+			if(d['error']){
+				return show_error_msg('#messages',d['error'],{is_sys_error:0,max_errors_show:2})
+			}
+			$('#messages').html('');
+			for(var i in d){
+				var e = d[i]
+				if(!e) continue;
+				if(!e['text']) continue;
+				add_message('#messages',d[i],i)
+			}
+			$('#messages').append(dtext);
+		}).fail(function() {
+			var msg = "<b>ВНИМАНИЕ: произошла внутренняя ошибка сервера</b><br> повторите ваш запрос немного позже"
+			show_msg('#messages',msg,{is_sys_error:1,max_errors_show:2})
+		});
+	},3000);
+}
+
+function add_message(id_selector,d,message_n){
+
+	var u = d['userdata']
+	var user = 'неизвестный'
+	if(u) user = u['fam']+' '+u['name']+' '+u['pat']
+	var date = d['datefmt']
+	var text = d['text']
+	
+	var imgcnt = d['imgcnt']
+	var imgs = ''
+	var images = d['images']
+	for(i=0;i<imgcnt;i++){
+		img = images[i]
+		imgs += '<a href="'+img['path']+'" title="'+img['title']+'" data-gallery="imgs'+message_n+'">'+
+				'	<img src="'+img['pathmin']+'" style="margin:4px;padding:4px;">'+
+				'</a>';
+	}
+	
+	var s = '<div class="panel panel-default panel-horizontal">'+
+			'	<div class="panel-heading" style="width:30%;text-align:right;">'+
+			'		'+user+'<br><font style="font-size:8pt;">'+date+'</font>'+
+			'	</div>'+
+			'	<div class="panel-body">'+text+'<br>'+imgs+'</div>'+
+			'</div>';
+	$(id_selector).append(s);
+}
+
+jQuery( document ).ready(function() {
+	load_all_messages();
+});
+</script>
+
+
+
+<div class="container" id=messagenew>
+	{{template "messagenew" .}}
+</div>
+

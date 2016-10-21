@@ -1,0 +1,258 @@
+	
+<script  type="text/javascript">
+var imagesuploaded = []
+jQuery( document ).ready(function() {
+	
+	$('input[type=text]').tooltip({ placement: "top", trigger: "focus" });
+	$('input[type=checkbox]').tooltip({ placement: "top", trigger: "focus" });
+	
+	$('#fileupload').click(function(){
+		$('#fileuploadctrl').val('')
+		document.getElementById('fileuploadctrl').click();
+	});
+	
+	$('#fileuploadctrl').change(function(){
+		obj = $('#fileuploadctrl');
+		
+	    var fd = new FormData;
+		
+		for(i=0;i<obj.prop('files').length;i++){
+			fd.append('file', obj.prop('files')[i]);
+		}
+		fd.append('path', obj.val());
+		fd.append('time', $('#time').val());
+		fd.append('uuid', $('#uuid').val());
+		
+	    $.ajax({
+	        type: 'POST',
+	        url: '/uploadfile',
+	        data: fd,
+	        processData: false,
+	        contentType: false,
+	        success: function (dataall) {
+				dataall = JSON.parse(dataall);
+				if(dataall['error']){
+					return show_msg('#resultinfo',dataall['error'])
+				}
+				
+				for(i=0;i<dataall["cnt"];i++){
+					data = dataall[i]
+					show_userimage(data)
+				}
+				update_session_postdata(1)
+	        }
+	    });
+		
+		//alert(fd);
+	})
+	
+	
+	$('#sendpost').click(function(){
+		var aerr = []
+		
+		if( /[a-zа-я \n\r]{2,}/i.test($('#posttext').val().trim())==false ) {
+			aerr.push('напишите хотя бы несколько слов в сообщении')
+		}
+		if( /^.{2,}$/i.test($('#name').val().trim())==false ) {
+			aerr.push('укажите имя (<i>не менее 2 букв</i>)')
+		}
+		
+		if( aerr.length > 0 ){
+		    return show_msg_arr('#resultinfo',aerr)
+		}else{
+			$('#resultinfo').html("")
+		}
+		
+		jsondatastr = get_post_data_jsonstr()
+		
+		
+		$('#sendpost').prop( "disabled", true );
+		
+	    $.ajax({
+	        type: 'POST',
+	        url: '/messagenew',
+	        data: jsondatastr,
+			temp: 0 
+	    }).always(function() {
+		  		$('#sendpost').prop( "disabled", false );
+		}).done(function(data1) {
+				//alert(data1)
+				data1 = JSON.parse(data1);
+				if(data1['error']){
+					return show_msg('#resultinfo',data1['error'])
+				}
+				show_msg('#resultinfo',data1['info'],{type:'info',max_errors_show:2})
+				if(data1['warning']){
+					show_msg('#resultinfo',data1['warning'],{type:'warning',max_errors_show:2})
+				}
+				$('#resultinfo').html(s)
+				$('#fieldset1').hide()
+				$('#fieldset2').find('#sendpost').hide()
+		}).fail(function() {
+				var msg = "<b>ВНИМАНИЕ: произошла внутренняя ошибка сервера</b><br> повторите ваш запрос немного позже"
+				show_msg('#resultinfo',msg,{is_sys_error:1,max_errors_show:1})
+		})
+	})
+	
+	$('.userpostdata').find('input[type=text]').change(update_session_postdata)
+	$('.userpostdata').find('textarea').change(update_session_postdata)
+	{
+		//выводим картинки загруженные пользователем ранее в этой же сессии и обязательно после $('.userpostdata').find('input[type=text]').change(update_session_postdata)
+		var strjson = "{{.post.imagesuploaded_jsonstr}}"
+		if(strjson=="") strjson = "{}"
+		var useroldimages = JSON.parse(strjson);
+		for(i=0;i<useroldimages.length;i++){
+			var d = useroldimages[i]
+			show_userimage(d)
+		}
+	}
+});
+
+
+//сохраняем промежуточные данные введенные пользователем в текущей сессии
+window.savesession_postdata = 0  // флаг сохранения текущей сессии
+window.savesession_cnt = 0
+window.savesession_wait = 0
+function update_session_postdata(needsave){
+	var stimeout = 3000
+	if(window.savesession_postdata==0 || needsave==1){
+		window.savesession_wait = 0;
+		window.savesession_postdata = 1;
+		jsondatastr = get_post_data_jsonstr()
+		$.ajax({
+		    type: 'POST',
+		    url: '/messagenewsavesession',
+		    data: jsondatastr,
+		    success: function (data1) {
+				window.savesession_cnt += 1;
+				//$('#resultinfo').html("update "+window.savesession_cnt)
+				setTimeout(function(){window.savesession_postdata = 0;},stimeout)
+		    }
+		});
+	}else{
+		if(window.savesession_wait == 0){
+			window.savesession_wait = 1
+			setTimeout(update_session_postdata,stimeout)
+		}
+	}
+}
+
+//добавляет блок загруженной картинки с подписью для редактирования пользователем
+function show_userimage(data){
+	if(!data) return;
+	if(!data['path']) return;	
+	if(!data['pathmin']) return;
+	//alert(data)
+	n = imagesuploaded.length
+	imagesuploaded[n] = data
+	
+	if(!data['text']) data['text'] = ''
+	
+	s = '<div class="panel panel-default col-md-3 userimageblock'+n+'" style="margin:2px;padding:2px;">'+
+		'	  <div class="panel-body">                                                                 '+
+		'		<button type="button" class="close" onclick="removeimage('+n+')">&times;</button>      '+
+		'	    <center>                                                                               '+
+		'			<a href="'+data['path']+'" title="" data-gallery>                                  '+
+		'			<img src="'+data['pathmin']+'" style="margin:4px;padding:4px;"/>                   '+
+		'   		</a>                                                                               '+
+		'		</center>                                                                              '+
+		'		<input type="text" placeholder="укажите описание файла" title="" data-toggle="tooltip" '+
+		'			   class="form-control imagenxname" filen='+n+'                                    '+
+		'			   value="'+data['text']+'"                                                        '+
+		'			/>                                                                                 '+
+		'	  </div>                                                                                   '+
+		'	</div>';
+	$('#filesinfo').append(s)
+	$('#filesinfo').find('input[filen='+n+']').change(update_session_postdata)
+}
+
+function removeimage(n){
+	imagesuploaded[n] = {}
+	delete imagesuploaded[n];
+	$('#filesinfo').find(".userimageblock"+n).remove()
+	update_session_postdata()
+}
+
+//get_post_data_jsonstr возвращает все введенные пользователем данные в json строке
+function get_post_data_jsonstr(){
+	var d = {}
+	d['uuid'] = $('#uuid').val();
+	d['time'] = $('#time').val();
+	d['name'] = $('#name').val();
+	d['posttext'] = $('#posttext').val();
+	
+	$(".imagenxname").each(function(){
+		var obj = $( this )
+		var i = obj.attr("filen")
+		if(imagesuploaded[i]){
+			imagesuploaded[i]['text'] = obj.val()
+		}
+	})
+	d['imagesuploaded'] = imagesuploaded;
+	
+	return JSON.stringify(d);
+}
+
+</script>
+
+
+
+<div class="container">
+<div class="panel panel-default">
+<div class="row">
+<div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1 col-sm-10 col-sm-offset-1">
+
+<form class="form-horizontal">
+  <fieldset>
+	<legend>Отправить сообщение</legend>
+
+	<input type=hidden id="uuid" value="{{.post.uuid}}" />
+	<input type=hidden id="time" value="{{.post.time}}" />
+	
+
+	<div class="form-group">
+		    <label for="name" class="col-lg-2 control-label">Имя:</label>
+		    <div class="col-lg-10">
+				<input 	name="name" placeholder="Представьтесь" value="{{if .post.name}}{{.post.name}}{{else}}{{.user.name}}{{end}}"
+				    	id="name" type="text" class="form-control" />
+		    </div>
+	</div>
+
+	
+	<div class="form-group">
+			<label for="posttext" class="col-lg-2 control-label">Сообщение:</label>
+			<div class="col-lg-10">
+			 	<textarea class="form-control" rows="4" id="posttext">{{.post.posttext}}</textarea>
+				<span style="display:none;"><input id=fileuploadctrl type="file" multiple="multiple" accept="image/jpeg,image/jpg" class="btn"></span>
+				<div id=filesinfo></div>
+				<button type="submit" class="btn btn-default pull-right" id=fileupload>загрузить фото</button>
+			</div>
+	</div>
+		
+		
+	<!--div class="form-group">
+			<div class="col-md-10 col-md-offset-2">
+			  <span style="display:none;"><input id=fileuploadctrl type="file" multiple="multiple" accept="image/jpeg,image/jpg" class="btn"></span>
+			  <div id=filesinfo></div>
+			</div>
+	</div-->
+		
+
+	<div class="form-group">
+			<div class="col-md-2 col-md-offset-2">
+			    <button type="submit" class="btn btn-primary btn-lg" id='sendpost'>отправить</button>
+			</div>
+			<div class="col-md-7 col-md-offset-1" id=resultinfo><!--{{.post.imagesuploaded_jsonstr}}--></div>
+	</div>
+
+	
+  </fieldset>
+</form>
+
+</div>
+<div class="col-lg-1 col-md-1 col-sm-1"></div>
+</div>
+</div>
+</div>
+
+
