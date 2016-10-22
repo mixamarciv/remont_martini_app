@@ -2,6 +2,8 @@ CREATE TABLE tmessage (
     uuid          VARCHAR(36),
     uuid_parent   VARCHAR(36),
     ishide        INTEGER DEFAULT 0,
+    name	  VARCHAR(200),
+    email 	  VARCHAR(200),
     userdata      VARCHAR(7000),
     text 	  VARCHAR(7000),
     data          BLOB,

@@ -1,7 +1,81 @@
 	
 <script  type="text/javascript">
 var imagesuploaded = []
+
+
+function sendmessage(){
+	var aerr = []
+	
+	if( /[a-zа-я \n\r]{2,}/i.test($('#text').val().trim())==false ) {
+		aerr.push('напишите хотя бы несколько слов в сообщении')
+	}
+	//if( /^.{2,}$/i.test($('#name').val().trim())==false ) {
+	//	aerr.push('укажите имя (<i>не менее 2 букв</i>)')
+	//}
+	
+	if( aerr.length > 0 ){
+	    return show_msg_arr('#resultinfo',aerr)
+	}else{
+		$('#resultinfo').html("")
+	}
+	
+	jsondatastr = get_post_data_jsonstr()
+	
+	$('#sendpost').prop( "disabled", true );
+    $.ajax({
+        type: 'POST',
+        url: '/messagenew',
+        data: jsondatastr,
+		temp: 0 
+    }).always(function() {
+	  		$('#sendpost').prop( "disabled", false );
+	}).done(function(data1) {
+			//alert(data1)
+			data1 = JSON.parse(data1);
+			if(data1['error']){
+				return show_msg('#resultinfo',data1['error'])
+			}
+
+			show_msg('#success_resultinfo',data1['success'],{type:'info',max_errors_show:2})
+			if(data1['warning']){
+				show_msg('#success_resultinfo',data1['warning'],{type:'warning',max_errors_show:2})
+			}
+			
+			clear_fields(data1);
+			reset_buttons();
+	}).fail(function() {
+			var msg = "<b>ВНИМАНИЕ: произошла внутренняя ошибка сервера</b><br> повторите ваш запрос немного позже"
+			show_msg('#resultinfo',msg,{is_sys_error:1,max_errors_show:1})
+	})
+}
+
+function clear_fields(d) {
+	$('#sendpost').prop( "disabled", false );
+	$('#fileuploadctrl').val('');
+	imagesuploaded = [];
+	$('#resultinfo').html('');
+	$('#filesinfo').html('');
+	$('#text').val('');
+	
+	if(d['new']){
+		var n = d['new']
+		$('#uuid').val(n['uuid']);
+		$('#time').val(n['time']);
+	}
+}
+
+function reset_buttons() {
+	$('.new_message_btn').show();
+	$('#new_message').css("display","none");
+}
+
 jQuery( document ).ready(function() {
+	$('.new_message_btn').click(function(){
+		$('.new_message_btn').hide();
+		$('#new_message').css("display","block");
+		$("html, body").delay(100).animate({scrollTop: $('#new_message').offset().top }, 400);
+		$('#success_resultinfo').html('');
+	});
 	
 	$('input[type=text]').tooltip({ placement: "top", trigger: "focus" });
 	$('input[type=checkbox]').tooltip({ placement: "top", trigger: "focus" });
@@ -29,70 +103,39 @@ jQuery( document ).ready(function() {
 	        data: fd,
 	        processData: false,
 	        contentType: false,
-	        success: function (dataall) {
-				dataall = JSON.parse(dataall);
-				if(dataall['error']){
-					return show_msg('#resultinfo',dataall['error'])
-				}
-				
-				for(i=0;i<dataall["cnt"];i++){
-					data = dataall[i]
-					show_userimage(data)
-				}
-				update_session_postdata(1)
-	        }
-	    });
+	        test: 0
+	    }).always(function() {
+	  		$('#sendpost').prop( "disabled", false );
+		}).done(function(d) {
+			//alert(data1)
+			d = JSON.parse(d);
+			if(d['error']){
+				return show_msg('#resultinfo',d['error'])
+			}
+			
+			for(i=0;i<d["cnt"];i++){
+				data = d[i]
+				show_userimage(data)
+			}
+			update_session_postdata(1)
+		}).fail(function() {
+			var msg = "<b>ВНИМАНИЕ: при загрузке изображения произошла внутренняя ошибка сервера</b><br> повторите ваш запрос немного позже"
+			show_msg('#resultinfo',msg,{is_sys_error:1,max_errors_show:1})
+		});
 		
 		//alert(fd);
 	})
 	
+	$('#formnewmessage').submit(function(event){
+		event.preventDefault();
+		sendmessage();
+	});
 	
-	$('#sendpost').click(function(){
-		var aerr = []
-		
-		if( /[a-zа-я \n\r]{2,}/i.test($('#posttext').val().trim())==false ) {
-			aerr.push('напишите хотя бы несколько слов в сообщении')
-		}
-		if( /^.{2,}$/i.test($('#name').val().trim())==false ) {
-			aerr.push('укажите имя (<i>не менее 2 букв</i>)')
-		}
-		
-		if( aerr.length > 0 ){
-		    return show_msg_arr('#resultinfo',aerr)
-		}else{
-			$('#resultinfo').html("")
-		}
-		
-		jsondatastr = get_post_data_jsonstr()
-		
-		
-		$('#sendpost').prop( "disabled", true );
-		
-	    $.ajax({
-	        type: 'POST',
-	        url: '/messagenew',
-	        data: jsondatastr,
-			temp: 0 
-	    }).always(function() {
-		  		$('#sendpost').prop( "disabled", false );
-		}).done(function(data1) {
-				//alert(data1)
-				data1 = JSON.parse(data1);
-				if(data1['error']){
-					return show_msg('#resultinfo',data1['error'])
-				}
-				show_msg('#resultinfo',data1['info'],{type:'info',max_errors_show:2})
-				if(data1['warning']){
-					show_msg('#resultinfo',data1['warning'],{type:'warning',max_errors_show:2})
-				}
-				$('#resultinfo').html(s)
-				$('#fieldset1').hide()
-				$('#fieldset2').find('#sendpost').hide()
-		}).fail(function() {
-				var msg = "<b>ВНИМАНИЕ: произошла внутренняя ошибка сервера</b><br> повторите ваш запрос немного позже"
-				show_msg('#resultinfo',msg,{is_sys_error:1,max_errors_show:1})
-		})
-	})
+	
+	$('#sendpost').click(function(event){
+		event.preventDefault();
+		sendmessage();
+	});
 	
 	$('.userpostdata').find('input[type=text]').change(update_session_postdata)
 	$('.userpostdata').find('textarea').change(update_session_postdata)
@@ -179,7 +222,8 @@ function get_post_data_jsonstr(){
 	d['uuid'] = $('#uuid').val();
 	d['time'] = $('#time').val();
 	d['name'] = $('#name').val();
-	d['posttext'] = $('#posttext').val();
+	d['email'] = $('#email').val();
+	d['text'] = $('#text').val();
 	
 	$(".imagenxname").each(function(){
 		var obj = $( this )
@@ -196,15 +240,16 @@ function get_post_data_jsonstr(){
 </script>
 
 
+<button type="submit" class="btn btn-primary btn-lg new_message_btn">написать сообщение</button>
 
-<div class="container">
+<div class="container" id=new_message style="display:none;">
 <div class="panel panel-default">
 <div class="row">
 <div class="col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1 col-sm-10 col-sm-offset-1">
 
-<form class="form-horizontal">
+<form1 class="form-horizontal userpostdata" id="formnewmessage">
   <fieldset>
-	<legend>Отправить сообщение</legend>
+	<legend>Новое сообщение</legend>
 
 	<input type=hidden id="uuid" value="{{.post.uuid}}" />
 	<input type=hidden id="time" value="{{.post.time}}" />
@@ -214,18 +259,29 @@ function get_post_data_jsonstr(){
 		    <label for="name" class="col-lg-2 control-label">Имя:</label>
 		    <div class="col-lg-10">
 				<input 	name="name" placeholder="Представьтесь" value="{{if .post.name}}{{.post.name}}{{else}}{{.user.name}}{{end}}"
-				    	id="name" type="text" class="form-control" />
+				    	id="name" type="text" class="form-control input-sm" />
 		    </div>
 	</div>
+	
+	<div class="form-group">
+		    <label for="email" class="col-lg-2 control-label">email:</label>
+		    <div class="col-lg-10">
+				<input 	name="email" placeholder="электронная почта (не обязательно)" value="{{if .post.email}}{{.post.email}}{{else}}{{.user.email}}{{end}}"
+						title="публиковаться не будет, на этот адрес будут приходить ответы от пользователей и администратора" 
+					    data-toggle="tooltip"
+				    	id="email" type="text" class="form-control input-sm" />
+		    </div>
+	</div>
+
 
 	
 	<div class="form-group">
 			<label for="posttext" class="col-lg-2 control-label">Сообщение:</label>
 			<div class="col-lg-10">
-			 	<textarea class="form-control" rows="4" id="posttext">{{.post.posttext}}</textarea>
+			 	<textarea class="form-control" rows="4" id="text">{{.post.text}}</textarea>
 				<span style="display:none;"><input id=fileuploadctrl type="file" multiple="multiple" accept="image/jpeg,image/jpg" class="btn"></span>
 				<div id=filesinfo></div>
-				<button type="submit" class="btn btn-default pull-right" id=fileupload>загрузить фото</button>
+				<button type="submit" class="btn btn-default pull-right" id=fileupload>загрузить изображения</button>
 			</div>
 	</div>
 		
@@ -247,12 +303,12 @@ function get_post_data_jsonstr(){
 
 	
   </fieldset>
-</form>
+</form1>
 
 </div>
 <div class="col-lg-1 col-md-1 col-sm-1"></div>
 </div>
 </div>
 </div>
-
+<div class="col-md-7 col-md-offset-1" id=success_resultinfo><!--{{.post.imagesuploaded_jsonstr}}--></div>
 

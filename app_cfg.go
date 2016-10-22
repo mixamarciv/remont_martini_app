@@ -13,3 +13,6 @@ var secret_cookie_store = "qwer1234"
 var work_emails = []string{"mixamarciv@gmail.com"}
 
 var default_session_data = `{"white":1,"dark":0}`
+
+//количество сообщений на одной странице
+var cfg_cnt_messages_on_page = 8

@@ -5,7 +5,7 @@ import (
 
 	"github.com/codegangsta/martini-contrib/render"
 	"github.com/go-martini/martini"
-	//"github.com/martini-contrib/binding"
+	"github.com/martini-contrib/binding"
 	"github.com/martini-contrib/sessions"
 
 	"html/template"
@@ -87,6 +87,8 @@ func main() {
 	m.Post("/messages", http_post_messages)
 	m.Post("/messagenewsavesession", http_post_messagenewsavesession)
 	m.Post("/messagenew", http_post_messagenew)
+
+	m.Post("/uploadfile", binding.MultipartForm(UploadForm{}), http_post_uploadfile)
 
 	m.RunOnAddr(run_on_addr)
 }

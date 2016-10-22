@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"fmt"
+	"fmt"
 	//"image"
 	//"image/jpeg"
 	//"io/ioutil"
@@ -9,7 +9,8 @@ import (
 	//"mime/multipart"
 	"net/http"
 	//"os"
-	//"strconv"
+	"strconv"
+	"time"
 
 	"github.com/codegangsta/martini-contrib/render"
 	"github.com/martini-contrib/sessions"
@@ -21,7 +22,11 @@ import (
 	//"math/rand"
 
 	//"github.com/nfnt/resize"
+	"html"
 )
+
+var itoa = strconv.Itoa
+var atoi = strconv.Atoi
 
 func http_get_messages(r render.Render, session sessions.Session) {
 	var m = map[string]interface{}{}
@@ -29,7 +34,24 @@ func http_get_messages(r render.Render, session sessions.Session) {
 	user := GetSessJson(session, "user", "{}")
 	m["user"] = user
 	m["post"] = post
+	if _, ok := post["uuid"]; !ok {
+		post["uuid"] = mf.StrUuid()
+		post["time"] = mf.CurTimeStrShort()
+		SetSessJson(session, "post", post)
+	}
+
 	m["s"] = GetSessJson(session, "s", default_session_data)
+
+	{ //загружаем общую информацию о сообщениях:
+		query := `SELECT COUNT(*) FROM tmessage p WHERE p.ishide=0`
+		rows, err := db.Query(query)
+		LogPrintErrAndExit("db.Query error: \n"+query+"\n\n", err)
+		rows.Next()
+		var cnt int
+		err = rows.Scan(&cnt)
+		LogPrintErrAndExit("rows.Scan error: \n"+query+"\n\n", err)
+		m["messages_count"] = cnt
+	}
 
 	if imgs, ok := post["imagesuploaded"]; ok {
 		post["imagesuploaded_jsonstr"] = mf.ToJsonStr(imgs)
@@ -39,71 +61,141 @@ func http_get_messages(r render.Render, session sessions.Session) {
 }
 
 func http_post_messages(req *http.Request, session sessions.Session) string {
-	/**********
 	p := ParseBodyParams(req)
-	ret := make([]map[string]interface{}, 0)
 
-	uuid_post, ok := p["uuid_post"]
-	if !ok {
-		return "{\"error\":\"uuid_post не задан\"}"
+	var skip float64 = 0
+
+	fmt.Printf("%#v", p)
+	if t, ok := p["skip"]; ok {
+		skip = t.(float64)
 	}
 
-	query := "SELECT uuid,uuid_parent,iif(ishideuser=1,'{}',userdata) AS userdata,text,commentdatet, "
-	query += "(SELECT COUNT(*) FROM timage t WHERE t.uuid_comment=p.uuid) "
-	query += "FROM tcomment p "
-	query += "WHERE uuid_post=? AND isactive=1 AND ishide=0 "
-	query += "ORDER BY commentdatet "
-	rows, err := db.Query(query, uuid_post)
+	cnt_skip := itoa(int(skip))
+	cnt_msgs := itoa(cfg_cnt_messages_on_page)
+
+	query := "SELECT FIRST " + cnt_msgs + " SKIP " + cnt_skip
+	query += "  uuid,uuid_parent,userdata,name,email,text,upddate,tdate,tdatet,"
+	query += "  (SELECT COUNT(*) FROM timage t WHERE t.uuid_message=p.uuid)"
+	query += "FROM tmessage p "
+	query += "WHERE ishide=0 "
+
+	// uuid_parent:
+	if s, ok := p["uuid_parent"]; ok {
+		if s.(string) != "-" {
+			query += " AND p.uuid='" + s.(string) + "' "
+		}
+	}
+	query += "ORDER BY tdatet"
+
+	rows, err := db.Query(query)
 	if err != nil {
 		LogPrintErrAndExit("ERROR db.Query(query): \n"+query+"\n\n", err)
 	}
 
+	ret := make([]map[string]interface{}, 0)
+
+	cfg := map[string]interface{}{"cnt_msgs": cfg_cnt_messages_on_page, "skip": skip}
+	ret = append(ret, cfg) //первая строка всегда будет информационная
+
 	cnt_rows := 0
 	for rows.Next() {
 		cnt_rows++
-		var uuid, uuid_parent, userdata, text NullString
-		var commentdatet time.Time
+		var uuid, uuid_parent, userdata, name, email, text, upddate, tdate NullString
+		var tdatet time.Time
 		var imgcnt int
-		if err := rows.Scan(&uuid, &uuid_parent, &userdata, &text, &commentdatet, &imgcnt); err != nil {
+		if err := rows.Scan(&uuid, &uuid_parent, &userdata, &name, &email, &text, &upddate, &tdate, &tdatet, &imgcnt); err != nil {
 			LogPrintErrAndExit("ERROR rows.Scan: \n"+query+"\n\n", err)
 		}
-		m := map[string]interface{}{"uuid": uuid.get(""), "uuid_parent": uuid_parent.get(""), "text": post_text_to_html(text.get("-"))}
+		m := map[string]interface{}{"uuid": uuid.get(""), "uuid_parent": uuid_parent.get("-"), "text": post_text_to_html(text.get("-"))}
 		m["userdata"] = mf.FromJsonStr([]byte(userdata.get("{}")))
-		for k, _ := range m["userdata"].(map[string]interface{}) {
-			switch k {
-			case "phone", "email":
-				delete(m["userdata"].(map[string]interface{}), k)
-			}
-		}
-		m["datefmt"] = commentdatet.Format("02.01.2006 15:04")
+		m["name"] = name.get("аноним")
+		m["datefmt"] = tdatet.Format("02.01.2006 15:04")
 		m["imgcnt"] = imgcnt
 		if imgcnt > 0 {
-			m["images"] = load_posts_or_comment_images_arr(m["uuid"].(string), "comment", cnt_rows)
+			m["images"] = load_images_arr(m["uuid"].(string), cnt_rows)
 		}
 		ret = append(ret, m)
 	}
 	rows.Close()
 
-	test := map[string]interface{}{"uuid_post": uuid_post, "cnt_rows": cnt_rows, "query": query}
-	ret = append(ret, test)
+	retstr := mf.ToJsonStr(ret)
 
-	SetSessStr(session, "post", string("")) //затираем данные сессии, что бы пользователь дважды не создал один и тот же пост
-	retstr := mf.ToJsonStr(js)
 	return retstr
-	*******/
-	return "{}"
 }
 
 func http_post_messagenewsavesession(req *http.Request, session sessions.Session) string {
 	js := ParseBodyParams(req)
 	SetSessJson(session, "post", js)
+
+	user := map[string]interface{}{"name": js["name"], "email": js["email"]}
+	SetSessJson(session, "user", user)
 	return "{\"success\":1}"
 }
 
 func http_post_messagenew(req *http.Request, session sessions.Session) string {
 	js := ParseBodyParams(req)
+	save_message_data(js)
 
-	SetSessStr(session, "post", string("")) //затираем данные сессии, что бы пользователь дважды не создал один и тот же пост
-	retstr := mf.ToJsonStr(js)
-	return retstr
+	var ret = map[string]interface{}{}
+	{ //затираем данные сессии, что бы пользователь дважды не создал один и тот же пост
+		var post = map[string]interface{}{}
+		post["uuid"] = mf.StrUuid()
+		post["time"] = mf.CurTimeStrShort()
+		SetSessJson(session, "post", post)
+		ret["new"] = post
+	}
+	ret["uuid"] = js["uuid"]
+	ret["success"] = "ваше сообщение успешно отправлено"
+
+	return mf.ToJsonStr(ret)
+}
+
+func save_message_data(p map[string]interface{}) {
+	fmt.Printf("%#v", p)
+	posttime := mf.CurTimeStrShort()
+	query := "INSERT INTO tmessage(uuid_parent,uuid,userdata,name,email,text,upddate,tdate,tdatet) "
+	query += "VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)"
+	_, err := db.Exec(query, p["uuid_parent"], p["uuid"],
+		mf.ToJsonStr(p["userdata"]), p["name"], p["email"], p["text"], posttime, posttime)
+	LogPrintErrAndExit("ERROR db.Exec: \n"+query+"\n\n", err)
+
+	imgs := p["imagesuploaded"].([]interface{})
+	for _, imgi := range imgs {
+		img, ok := imgi.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		//log.Printf("%#v\n", img)
+		query := "INSERT INTO timage(uuid_message,uuid,hash,title,path,pathmin,imgdate,imgdatet) "
+		query += "VALUES(?,?,?,?,?,?,?,CURRENT_TIMESTAMP)"
+		_, err := db.Exec(query, p["uuid"], mf.StrUuid(), "nohash", img["text"], img["path"], img["pathmin"], posttime)
+		LogPrintErrAndExit("ERROR db.Exec: \n"+query+"\n\n", err)
+	}
+	//SendMailNewPostsToWork()
+}
+
+func load_images_arr(uuid_post string, i_post int) []map[string]string {
+	ret := make([]map[string]string, 0)
+	query := "SELECT uuid,title,path,pathmin "
+	query += " FROM timage WHERE uuid_message=? ORDER BY uuid"
+	rows, err := db.Query(query, uuid_post)
+	if err != nil {
+		LogPrintErrAndExit("ERROR db.Query(query): \n"+query+"\n\n", err)
+	}
+	for rows.Next() {
+		var uuid, title, path, pathmin NullString
+		if err := rows.Scan(&uuid, &title, &path, &pathmin); err != nil {
+			LogPrintErrAndExit("ERROR rows.Scan: \n"+query+"\n\n", err)
+		}
+		m := map[string]string{"uuid": uuid.get("-"), "title": title.get(""), "path": path.get(""), "pathmin": pathmin.get(""), "ipost": strconv.Itoa(i_post)}
+		ret = append(ret, m)
+	}
+	rows.Close()
+	return ret
+}
+
+func post_text_to_html(text string) string {
+	text = html.EscapeString(text)
+	//text = mf.StrRegexpReplace(text, "\\n", "<br>")
+	return text
 }
