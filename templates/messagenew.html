@@ -65,11 +65,13 @@ function clear_fields(d) {
 }
 
 function reset_buttons() {
-	$('.new_message_btn').show();
+	$('.new_message_btn').last().show();
+	if($('#messages').find('[mes_uuid]').length > 5) $('.new_message_btn').first().show();
 	$('#new_message').css("display","none");
 }
 
 jQuery( document ).ready(function() {
+	
 	$('.new_message_btn').click(function(){
 		$('.new_message_btn').hide();
 		$('#new_message').css("display","block");

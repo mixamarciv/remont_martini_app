@@ -5,7 +5,7 @@
 		<legend>сообщения ({{.messages_count}}):</legend>
 	</div>
 	<div class="col-sm-1 col-sm-offset-1">
-		<button type="submit" class="btn btn-primary btn-lg new_message_btn pull-right">написать сообщение</button>
+		<button type="submit" class="btn btn-primary btn-lg new_message_btn pull-right" style="display:none;">написать сообщение</button>
 	</div>
 </div>
 
@@ -96,12 +96,13 @@ function load_messages(type,uuid_parent,skip){
 				skip++;
 				add_message('#messages',d[i],i)
 			}
+			if($('#messages').find('[mes_uuid]').length > 5) $('.new_message_btn').first().show();
 			load_messages_btn_add('#messages',skip);
 		}).fail(function() {
 			var msg = "<b>ВНИМАНИЕ: произошла внутренняя ошибка сервера</b><br> повторите ваш запрос немного позже"
 			show_msg('#messages',msg,{is_sys_error:1,max_errors_show:2})
 		});
-	},300);
+	},500);
 }
 
 function load_messages_btn_remove(id_selector){
