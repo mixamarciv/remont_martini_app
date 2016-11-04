@@ -179,9 +179,8 @@ func load_images_arr(uuid_post string, i_post int) []map[string]string {
 	query := "SELECT uuid,title,path,pathmin "
 	query += " FROM timage WHERE uuid_message=? ORDER BY uuid"
 	rows, err := db.Query(query, uuid_post)
-	if err != nil {
-		LogPrintErrAndExit("ERROR db.Query(query): \n"+query+"\n\n", err)
-	}
+	LogPrintErrAndExit("ERROR db.Query(query): \n"+query+"\n\n", err)
+
 	for rows.Next() {
 		var uuid, title, path, pathmin NullString
 		if err := rows.Scan(&uuid, &title, &path, &pathmin); err != nil {

@@ -12,7 +12,7 @@ var secret_cookie_store = "qwer1234"
 //емеил на который будут уходить сообщения с сайта
 var work_emails = []string{"mixamarciv@gmail.com"}
 
-var default_session_data = `{"white":1,"dark":0}`
+var default_session_data = `{"white":0,"dark":1}`
 
 //количество сообщений на одной странице
 var cfg_cnt_messages_on_page = 8

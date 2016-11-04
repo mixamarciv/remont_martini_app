@@ -18,7 +18,8 @@ import (
 func init() {
 	InitLog()
 	InitDb()
-	initSendMail()
+	InitSendMail()
+	InitMinify()
 }
 
 func main() {

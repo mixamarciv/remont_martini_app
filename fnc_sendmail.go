@@ -11,7 +11,7 @@ import (
 
 var opts_sendmail map[string]string
 
-func initSendMail() {
+func InitSendMail() {
 	opts_sendmail = make(map[string]string, 1)
 	opts_sendmail["from"] = "uzkhinta@gmail.com"
 	opts_sendmail["host"] = "smtp.gmail.com"
