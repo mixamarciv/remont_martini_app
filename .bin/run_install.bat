@@ -17,8 +17,7 @@ go get "github.com/nakagami/firebirdsql"
 go get "github.com/nfnt/resize"
 
 go get "github.com/tdewolff/minify"
-go get "github.com/tdewolff/minify/css"
-go get "github.com/tdewolff/minify/js"
+
 
 go install
 
